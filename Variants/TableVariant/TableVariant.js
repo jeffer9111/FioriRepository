@@ -9,7 +9,7 @@ sap.ui.define([
     "sap/ui/core/library",
     "sap/ui/model/Filter",
     'sap/ui/model/Sorter',
-    "sap/m/ColumnListItem"
+    "sap/m/ColumnListItem",
 ],
     (Engine, MetadataHelper, SelectionController,
         SortController, GroupController, FilterController, ColumnWidthController, coreLibrary, Filter,
@@ -17,23 +17,14 @@ sap.ui.define([
 
         return {
 
-            initVariantModel(oController, sIdSmartVariantManagement, sIdTable, sComponentName, sIdFilterInfo) {
+            initVariantModel(oController, sIdTable, sIdFilterInfo, aMetadataHelper, sModel, sPath) {
+                this.sModel = sModel;
+                this.sPath = sPath;
                 this.oTable = oController.byId(sIdTable);
-                this.oFilterInfo = oController.byId(sIdFilterInfo);
+                // this.oFilterInfo = oController.byId(sIdFilterInfo);
                 this.oController = oController;
 
-                this.oMetadataHelper = new MetadataHelper([
-                    { key: "Id", label: "ID", path: "ID" },
-                    { key: "CompanyCode", label: "Company Code", path: "BUKRS" },
-                    { key: "StringDate", label: "String Date", path: "IDATE" },
-                    { key: "ModificationDate", label: "Modification Date", path: "MDATE" },
-                    { key: "Creditor", label: "Creditor", path: "DOC_NUMBER_BLDR" },
-                    { key: "Supplier", label: "Supplier", path: "DOC_NUMBER_PROV" },
-                    { key: "PaymentCondition", label: "Payment Condition", path: "ZTERM" },
-                    { key: "PurchaseOrder", label: "Purchase Order", path: "EBELN" },
-                    { key: "TypeMessage", label: "Type Message", path: "TYPE" },
-                    { key: "Message", label: "Message", path: "MESSAGE" }
-                ]);
+                this.oMetadataHelper = new MetadataHelper(aMetadataHelper);
 
                 Engine.getInstance().register(this.oTable, {
                     helper: this.oMetadataHelper,
@@ -49,7 +40,8 @@ sap.ui.define([
                     }
                 });
 
-                Engine.getInstance().attachStateChange(this.handleStateChange.bind(this));
+                // Engine.getInstance().attachStateChange(this.handleStateChange.bind(this));
+                Engine.getInstance().attachStateChange(this.handleStateChange.bind(this), this);
             },
 
             handleStateChange(oEvent) {
@@ -73,15 +65,15 @@ sap.ui.define([
                     if (!oProperty) {
                         return new sap.m.Text({ text: "" }); // fallback
                     }
-
+                    //Custom columns
                     if (oColumnState.key === "Id") {
-                        return new sap.m.ObjectIdentifier({ title: `{mainModel>${oProperty.path}}` });
+                        return new sap.m.ObjectIdentifier({ title: `{${this.sModel}>${oProperty.path}}` });
                     }
 
                     if (oProperty.path === "MDATE") {
                         return new sap.m.Text({
                             text: {
-                                path: `mainModel>${oProperty.path}`,
+                                path: `${this.sModel}>${oProperty.path}`,
                                 type: new sap.ui.model.type.Date({
                                     UTC: true,
                                     pattern: "dd/MM/yyyy"
@@ -90,13 +82,13 @@ sap.ui.define([
                         });
                     }
 
-                    return new sap.m.Text({ text: `{mainModel>${oProperty.path}}` });
+                    return new sap.m.Text({ text: `{${this.sModel}>${oProperty.path}}` });
                 });
 
                 // Rebind the table with generated template
                 this.oTable.bindItems({
                     templateShareable: false,
-                    path: "mainModel>/",
+                    path: this.sPath,
                     sorter: aSorter.concat(aGroups),
                     filters: aFilter,
                     template: new ColumnListItem({
@@ -139,7 +131,7 @@ sap.ui.define([
                     });
                 });
 
-                this.oFilterInfo.setVisible(aFilter.length > 0);
+                // this.oFilterInfo.setVisible(aFilter.length > 0);
 
                 return aFilter;
             },
